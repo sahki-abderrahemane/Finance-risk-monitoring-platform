@@ -1,0 +1,6 @@
+numpy>=2.1
+pandas>=2.2
+pydantic>=2.10
+
+[dev]
+pytest>=9.0

@@ -1,0 +1,2 @@
+dataset_name,rows,columns,feature_count,target_count,mean_return,return_std,mean_volatility,positive_target_ratio
+AAPL,1234,19,11,2,0.0008347518907102024,0.01771314463537597,0.016428541154293222,0.5316045380875203

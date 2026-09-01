@@ -1,0 +1,2 @@
+dataset_name,rows,columns,feature_count,target_count,mean_return,return_std,mean_volatility,positive_target_ratio
+GOOGL,1234,19,11,2,0.0009725673689462285,0.02032774105180371,0.019553446892458363,0.5235008103727715

@@ -1,0 +1,2 @@
+dataset_name,rows,columns,feature_count,target_count,mean_return,return_std,mean_volatility,positive_target_ratio
+AMZN,2493,19,11,2,0.0009631744743618464,0.020898288317848523,0.01913248384026302,0.5286803048535901

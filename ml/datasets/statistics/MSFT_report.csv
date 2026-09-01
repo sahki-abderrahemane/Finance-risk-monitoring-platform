@@ -1,0 +1,2 @@
+dataset_name,rows,columns,feature_count,target_count,mean_return,return_std,mean_volatility,positive_target_ratio
+MSFT,2493,19,11,2,0.0010290428722091172,0.017512026273259748,0.015671926300443725,0.5342960288808665

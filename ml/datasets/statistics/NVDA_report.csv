@@ -1,0 +1,2 @@
+dataset_name,rows,columns,feature_count,target_count,mean_return,return_std,mean_volatility,positive_target_ratio
+NVDA,2493,19,11,2,0.0024843294733803427,0.031620507793708584,0.02907796029344839,0.5310870437224228
