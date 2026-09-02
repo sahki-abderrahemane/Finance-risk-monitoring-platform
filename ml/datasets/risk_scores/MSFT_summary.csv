@@ -1,0 +1,2 @@
+ticker,rows,mean_score,median_score,minimum_score,maximum_score,low_count,moderate_count,high_count,extreme_count
+MSFT,375,43.707274179178775,41.89471803556915,16.296127352781774,74.76017471718306,46,195,134,0

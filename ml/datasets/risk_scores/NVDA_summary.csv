@@ -1,0 +1,2 @@
+ticker,rows,mean_score,median_score,minimum_score,maximum_score,low_count,moderate_count,high_count,extreme_count
+NVDA,375,44.24656641812288,38.80535625165549,24.069646073760126,73.75693979289018,2,252,121,0

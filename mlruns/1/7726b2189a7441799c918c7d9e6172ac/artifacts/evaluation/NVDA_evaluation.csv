@@ -1,0 +1,2 @@
+ticker,rows,gbm_accuracy,gbm_roc_auc,gbm_log_loss,gbm_brier_score,baseline_accuracy,baseline_positive_class_ratio,accuracy_lift,risk_score_mean,risk_score_median,high_risk_positive_ratio,low_risk_positive_ratio
+NVDA,375,0.5386666666666666,0.5496207152227228,0.7284898141266143,0.2642960090752438,0.5253333333333333,0.5253333333333333,0.013333333333333308,44.24656641812288,38.80535625165549,0.4628099173553719,0.5

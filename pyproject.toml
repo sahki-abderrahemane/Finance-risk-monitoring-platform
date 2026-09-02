@@ -19,10 +19,11 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["services/data_engine/src"]
+where = ["services/data_engine/src", "services/risk-engine/src"]
 
 [tool.pytest.ini_options]
 testpaths = [
     "services/data_engine/tests",
+    "services/risk-engine/tests",
 ]
-pythonpath = ["."]
+pythonpath = [".", "services/risk-engine/src"]

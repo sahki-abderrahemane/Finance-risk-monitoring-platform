@@ -1,0 +1,2 @@
+ticker,rows,gbm_accuracy,gbm_roc_auc,gbm_log_loss,gbm_brier_score,baseline_accuracy,baseline_positive_class_ratio,accuracy_lift,risk_score_mean,risk_score_median,high_risk_positive_ratio,low_risk_positive_ratio
+MSFT,375,0.52,0.5214717799463562,0.8335822439802808,0.30202202404148104,0.528,0.528,-0.008000000000000007,43.707274179178775,41.89471803556915,0.5373134328358209,0.5

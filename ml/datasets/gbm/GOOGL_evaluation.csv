@@ -1,0 +1,2 @@
+ticker,rows,gbm_accuracy,gbm_roc_auc,gbm_log_loss,gbm_brier_score,baseline_accuracy,baseline_positive_class_ratio,accuracy_lift,risk_score_mean,risk_score_median,high_risk_positive_ratio,low_risk_positive_ratio
+GOOGL,186,0.5,0.48835862388509205,0.8006112538313696,0.2902863355429227,0.521505376344086,0.478494623655914,-0.021505376344086002,55.00750725085306,54.411727322692315,0.47540983606557374,
