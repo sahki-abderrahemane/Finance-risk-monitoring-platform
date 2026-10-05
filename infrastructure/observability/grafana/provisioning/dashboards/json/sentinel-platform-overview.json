@@ -1,0 +1,371 @@
+{
+  "uid": "sentinel-platform-overview",
+  "title": "Sentinel-AI Platform Overview",
+  "tags": ["sentinel-ai", "platform"],
+  "timezone": "browser",
+  "editable": true,
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "query": "label_values(sentinel_http_requests_total, service)",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" },
+        "refresh": 2
+      },
+      {
+        "name": "endpoint",
+        "type": "query",
+        "query": "label_values(sentinel_http_requests_total{service=~\"$service\"}, endpoint)",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" },
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service Health",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "HTTP Requests / sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum by (service) (rate(sentinel_http_requests_total{service=~\"$service\"}[5m]))",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "fillOpacity": 20 }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Error Rate (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "expr": "100 * sum by (service) (rate(sentinel_http_requests_total{service=~\"$service\", status_code=~\"5..\"}[5m])) / sum by (service) (rate(sentinel_http_requests_total{service=~\"$service\"}[5m]))",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "drawStyle": "line", "fillOpacity": 20 },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "In-Progress Requests",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 4, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(sentinel_http_requests_in_progress{service=~\"$service\"})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Active Alerts",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 4, "x": 20, "y": 1 },
+      "targets": [
+        {
+          "expr": "count(ALERTS{alertstate=\"firing\", alertname=~\"Sentinel.*\"})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Latency",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }
+    },
+    {
+      "id": 11,
+      "title": "Request Latency (p50, p95, p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le, service) (rate(sentinel_http_request_duration_seconds_bucket{service=~\"$service\", endpoint=~\"$endpoint\"}[5m])))",
+          "legendFormat": "p50 {{ service }}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, service) (rate(sentinel_http_request_duration_seconds_bucket{service=~\"$service\", endpoint=~\"$endpoint\"}[5m])))",
+          "legendFormat": "p95 {{ service }}",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, service) (rate(sentinel_http_request_duration_seconds_bucket{service=~\"$service\", endpoint=~\"$endpoint\"}[5m])))",
+          "legendFormat": "p99 {{ service }}",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Request / Response Size",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(sentinel_http_request_size_bytes_bucket{service=~\"$service\"}[5m])))",
+          "legendFormat": "request p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(sentinel_http_response_size_bytes_bucket{service=~\"$service\"}[5m])))",
+          "legendFormat": "response p50",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 20,
+      "title": "ML Inference",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }
+    },
+    {
+      "id": 21,
+      "title": "Inference Requests / sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 19 },
+      "targets": [
+        {
+          "expr": "sum by (model_name, status) (rate(sentinel_inference_requests_total{service=~\"$service\"}[5m]))",
+          "legendFormat": "{{ model_name }} [{{ status }}]",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "fillOpacity": 20 }
+        }
+      }
+    },
+    {
+      "id": 22,
+      "title": "Inference Latency (p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 19 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, model_name) (rate(sentinel_inference_latency_seconds_bucket{service=~\"$service\"}[5m])))",
+          "legendFormat": "{{ model_name }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 23,
+      "title": "Model Load Status",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 19 },
+      "targets": [
+        {
+          "expr": "sentinel_model_loaded{service=~\"$service\"}",
+          "legendFormat": "{{ model_name }} v{{ model_version }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "NOT LOADED", "color": "red" }, "1": { "text": "LOADED", "color": "green" } } }
+          ]
+        }
+      }
+    },
+    {
+      "id": 30,
+      "title": "RAG Retrieval",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }
+    },
+    {
+      "id": 31,
+      "title": "Retrieval Requests / sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(sentinel_retrieval_requests_total{service=~\"$service\"}[5m]))",
+          "legendFormat": "{{ status }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "fillOpacity": 20 }
+        }
+      }
+    },
+    {
+      "id": 32,
+      "title": "Retrieval Latency (p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 28 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(sentinel_retrieval_latency_seconds_bucket{service=~\"$service\"}[5m])))",
+          "legendFormat": "p99",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 33,
+      "title": "Retrieved Doc Count (p50)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 28 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(sentinel_retrieved_documents_count_bucket{service=~\"$service\"}[5m])))",
+          "legendFormat": "docs p50",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 40,
+      "title": "Data Quality & Risk Scores",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 }
+    },
+    {
+      "id": 41,
+      "title": "Data Quality Failure Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 37 },
+      "targets": [
+        {
+          "expr": "sum by (service) (rate(sentinel_data_quality_failures_total{service=~\"$service\"}[5m]))",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "fillOpacity": 20 }
+        }
+      }
+    },
+    {
+      "id": 42,
+      "title": "Risk Score Distribution",
+      "type": "histogram",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 37 },
+      "targets": [
+        {
+          "expr": "sentinel_risk_score_distribution_bucket{service=~\"$service\"}",
+          "legendFormat": "{{ model_name }}",
+          "refId": "A",
+          "format": "heatmap"
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "title": "Explanation Groundedness",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 37 },
+      "targets": [
+        {
+          "expr": "sentinel_explanation_groundedness{service=~\"$service\"}",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green", "value": 0.8 }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

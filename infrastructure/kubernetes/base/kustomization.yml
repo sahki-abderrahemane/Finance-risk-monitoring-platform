@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sentinel-ai
+
+resources:
+  - platform.yml
+  - rag-engine.yml
+  - rl-engine.yml
+  - risk-engine-api-deployment.yaml
+  - nlp-engine-api-deployment.yaml
+  - vision-engine-api-deployment.yaml
+  - multimodal-engine-api-deployment.yaml
+  - service-config.yml
+  - secrets.yml
+  - network-policies.yml
+  - observability-prometheus-config.yaml
+  - observability-rules.yaml
+  - prometheus-deployment.yaml
+  - prometheus-service.yaml
+  - alertmanager-config.yaml
+  - alertmanager-deployment.yaml
+  - grafana-deployment.yaml
+  - grafana-provisioning.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: sentinel-ai
+  app.kubernetes.io/managed-by: kustomize

@@ -1,2 +1,0 @@
-ticker,rows,gbm_accuracy,gbm_roc_auc,gbm_log_loss,gbm_brier_score,baseline_accuracy,baseline_positive_class_ratio,accuracy_lift,risk_score_mean,risk_score_median,high_risk_positive_ratio,low_risk_positive_ratio
-AMZN,375,0.4693333333333333,0.45975964002961783,0.726617102262686,0.26551981596883856,0.5173333333333333,0.5173333333333333,-0.04799999999999999,48.83885178385357,45.8232853548964,0.46616541353383456,0.0

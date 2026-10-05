@@ -1,0 +1,87 @@
+{
+  "project_root": "/home/abdou/Desktop/dev/AI/sentinel",
+  "dataset_paths": {
+    "market": "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/features",
+    "vision": "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/charts/chart_metadata.csv",
+    "sentiment": "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/news/evaluation/sentiment_daily.csv"
+  },
+  "dataset_sizes": {
+    "market": 9947,
+    "sentiment": 9947,
+    "vision": 9882
+  },
+  "global_date_coverage": {
+    "market": {
+      "min": "2016-09-27T00:00:00",
+      "max": "2026-08-28T00:00:00"
+    },
+    "sentiment": {
+      "min": "2016-09-27T00:00:00",
+      "max": "2026-08-28T00:00:00"
+    },
+    "vision": {
+      "min": "2016-10-10T00:00:00",
+      "max": "2026-08-24T00:00:00"
+    }
+  },
+  "exact_intersections": {
+    "market_keys": 9947,
+    "sentiment_keys": 9947,
+    "vision_keys": 9882,
+    "market_sentiment": 9947,
+    "market_vision": 9882,
+    "all_three": 9882
+  },
+  "intersection_by_ticker": [
+    {
+      "ticker": "AAPL",
+      "market_rows": 1234,
+      "sentiment_rows": 1234,
+      "vision_rows": 1221,
+      "market_sentiment": 1234,
+      "market_vision": 1221,
+      "all_three": 1221
+    },
+    {
+      "ticker": "AMZN",
+      "market_rows": 2493,
+      "sentiment_rows": 2493,
+      "vision_rows": 2480,
+      "market_sentiment": 2493,
+      "market_vision": 2480,
+      "all_three": 2480
+    },
+    {
+      "ticker": "GOOGL",
+      "market_rows": 1234,
+      "sentiment_rows": 1234,
+      "vision_rows": 1221,
+      "market_sentiment": 1234,
+      "market_vision": 1221,
+      "all_three": 1221
+    },
+    {
+      "ticker": "MSFT",
+      "market_rows": 2493,
+      "sentiment_rows": 2493,
+      "vision_rows": 2480,
+      "market_sentiment": 2493,
+      "market_vision": 2480,
+      "all_three": 2480
+    },
+    {
+      "ticker": "NVDA",
+      "market_rows": 2493,
+      "sentiment_rows": 2493,
+      "vision_rows": 2480,
+      "market_sentiment": 2493,
+      "market_vision": 2480,
+      "all_three": 2480
+    }
+  ],
+  "diagnosis": {
+    "vision_alignment_ok": true,
+    "nlp_alignment_available": true,
+    "full_multimodal_alignment_available": true
+  }
+}

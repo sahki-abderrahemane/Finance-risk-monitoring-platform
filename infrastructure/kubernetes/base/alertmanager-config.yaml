@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sentinel-ai-alertmanager-config
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/part-of: sentinel-ai
+type: Opaque
+stringData:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+
+    route:
+      receiver: sentinel-ai-default
+
+      group_by:
+        - alertname
+        - severity
+        - namespace
+
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+
+      routes:
+        - receiver: sentinel-ai-critical
+          matchers:
+            - severity="critical"
+          continue: false
+
+        - receiver: sentinel-ai-warning
+          matchers:
+            - severity="warning"
+          continue: false
+
+    inhibit_rules:
+      # A critical alert suppresses a corresponding warning
+      # for the same operational object.
+      - source_matchers:
+          - severity="critical"
+        target_matchers:
+          - severity="warning"
+        equal:
+          - namespace
+          - alertname
+
+    receivers:
+      - name: sentinel-ai-default
+        webhook_configs:
+          - url: http://sentinel-ai-alertmanager-webhook:5001/alerts
+            send_resolved: true
+
+      - name: sentinel-ai-warning
+        webhook_configs:
+          - url: http://sentinel-ai-alertmanager-webhook:5001/alerts
+            send_resolved: true
+
+      - name: sentinel-ai-critical
+        webhook_configs:
+          - url: http://sentinel-ai-alertmanager-webhook:5001/alerts
+            send_resolved: true

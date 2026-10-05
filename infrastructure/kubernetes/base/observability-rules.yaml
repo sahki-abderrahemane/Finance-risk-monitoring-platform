@@ -1,0 +1,475 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sentinel-ai-prometheus-rules
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: sentinel-ai
+data:
+  platform.yml: |
+    groups:
+
+      - name: sentinel-ai-platform
+        interval: 30s
+
+        rules:
+
+          # Detect containers repeatedly restarting.
+          - alert: SentinelAIPodRestarting
+            expr: |
+              increase(
+                kube_pod_container_status_restarts_total{
+                  namespace="sentinel-ai"
+                }[15m]
+              ) > 3
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI pod is repeatedly restarting"
+              description: >
+                A Sentinel-AI container restarted more than three times
+                within the previous fifteen minutes.
+
+          # Detect pods that are not ready.
+          - alert: SentinelAIPodNotReady
+            expr: |
+              kube_pod_status_ready{
+                namespace="sentinel-ai",
+                condition="true"
+              } == 0
+            for: 10m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI pod is not ready"
+              description: >
+                A pod in the Sentinel-AI namespace has remained
+                unready for at least ten minutes.
+
+          # Detect high CPU consumption.
+          - alert: SentinelAIHighCPU
+            expr: |
+              sum by (pod) (
+                rate(
+                  container_cpu_usage_seconds_total{
+                    namespace="sentinel-ai",
+                    container!="",
+                    container!="POD"
+                  }[5m]
+                )
+              ) > 0.8
+            for: 10m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI pod has sustained high CPU usage"
+              description: >
+                A Sentinel-AI pod has sustained CPU utilization above
+                the configured platform threshold.
+
+          # Detect high memory consumption.
+          - alert: SentinelAIHighMemory
+            expr: |
+              (
+                container_memory_working_set_bytes{
+                  namespace="sentinel-ai",
+                  container!="",
+                  container!="POD"
+                }
+                /
+                container_spec_memory_limit_bytes{
+                  namespace="sentinel-ai",
+                  container!="",
+                  container!="POD"
+                }
+              ) > 0.85
+            for: 10m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI pod has high memory utilization"
+              description: >
+                A Sentinel-AI container has sustained memory utilization
+                above 85 percent of its configured limit.
+
+  http.yml: |
+    groups:
+
+      - name: sentinel-ai-http
+        interval: 15s
+
+        rules:
+
+          # HTTP error rate > 5% over 5 minutes.
+          - alert: SentinelAIHighErrorRate
+            expr: |
+              sum by (service, endpoint) (
+                rate(
+                  sentinel_http_requests_total{
+                    namespace="sentinel-ai",
+                    status_code=~"5.."
+                  }[5m]
+                )
+              )
+              /
+              sum by (service, endpoint) (
+                rate(
+                  sentinel_http_requests_total{
+                    namespace="sentinel-ai"
+                  }[5m]
+                )
+              ) > 0.05
+            for: 5m
+            labels:
+              severity: critical
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI service has elevated error rate"
+              description: >
+                Service {{ $labels.service }} endpoint {{ $labels.endpoint }}
+                has a 5xx error rate above 5% for at least 5 minutes.
+
+          # HTTP p99 latency > 5 seconds over 5 minutes.
+          - alert: SentinelAIHighLatency
+            expr: |
+              histogram_quantile(
+                0.99,
+                sum by (le, service, endpoint) (
+                  rate(
+                    sentinel_http_request_duration_seconds_bucket{
+                      namespace="sentinel-ai"
+                    }[5m]
+                  )
+                )
+              ) > 5
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI service has high latency"
+              description: >
+                Service {{ $labels.service }} endpoint {{ $labels.endpoint }}
+                p99 latency has exceeded 5 seconds for at least 5 minutes.
+
+          # HTTP p50 latency > 2 seconds over 5 minutes.
+          - alert: SentinelAISlowResponses
+            expr: |
+              histogram_quantile(
+                0.50,
+                sum by (le, service, endpoint) (
+                  rate(
+                    sentinel_http_request_duration_seconds_bucket{
+                      namespace="sentinel-ai"
+                    }[5m]
+                  )
+                )
+              ) > 2
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI service has slow median response time"
+              description: >
+                Service {{ $labels.service }} endpoint {{ $labels.endpoint }}
+                median latency has exceeded 2 seconds for at least 5 minutes.
+
+  ml.yml: |
+    groups:
+
+      - name: sentinel-ai-ml-inference
+        interval: 30s
+
+        rules:
+
+          # ML inference error rate > 10% over 5 minutes.
+          - alert: SentinelAIInferenceErrors
+            expr: |
+              sum by (service, model_name) (
+                rate(
+                  sentinel_inference_requests_total{
+                    namespace="sentinel-ai",
+                    status="error"
+                  }[5m]
+                )
+              )
+              /
+              sum by (service, model_name) (
+                rate(
+                  sentinel_inference_requests_total{
+                    namespace="sentinel-ai"
+                  }[5m]
+                )
+              ) > 0.10
+            for: 5m
+            labels:
+              severity: critical
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI ML inference error rate is elevated"
+              description: >
+                Model {{ $labels.model_name }} in service {{ $labels.service }}
+                has an error rate above 10% for at least 5 minutes.
+
+          # ML inference p99 latency > 10 seconds.
+          - alert: SentinelAIInferenceSlow
+            expr: |
+              histogram_quantile(
+                0.99,
+                sum by (le, service, model_name) (
+                  rate(
+                    sentinel_inference_latency_seconds_bucket{
+                      namespace="sentinel-ai"
+                    }[5m]
+                  )
+                )
+              ) > 10
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI ML inference is slow"
+              description: >
+                Model {{ $labels.model_name }} in service {{ $labels.service }}
+                p99 inference latency has exceeded 10 seconds.
+
+          # Model load failures > 0 over 5 minutes.
+          - alert: SentinelAIModelLoadFailure
+            expr: |
+              increase(
+                sentinel_model_load_failures_total{
+                  namespace="sentinel-ai"
+                }[5m]
+              ) > 0
+            for: 1m
+            labels:
+              severity: critical
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI model failed to load"
+              description: >
+                Model {{ $labels.model_name }} in service {{ $labels.service }}
+                failed to load at least once in the last 5 minutes.
+
+  rag.yml: |
+    groups:
+
+      - name: sentinel-ai-rag
+        interval: 30s
+
+        rules:
+
+          # RAG retrieval error rate > 10% over 5 minutes.
+          - alert: SentinelAIRetrievalErrors
+            expr: |
+              sum by (service) (
+                rate(
+                  sentinel_retrieval_requests_total{
+                    namespace="sentinel-ai",
+                    status="error"
+                  }[5m]
+                )
+              )
+              /
+              sum by (service) (
+                rate(
+                  sentinel_retrieval_requests_total{
+                    namespace="sentinel-ai"
+                  }[5m]
+                )
+              ) > 0.10
+            for: 5m
+            labels:
+              severity: critical
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI RAG retrieval error rate is elevated"
+              description: >
+                Service {{ $labels.service }} has a retrieval error rate
+                above 10% for at least 5 minutes.
+
+          # RAG retrieval p99 latency > 5 seconds.
+          - alert: SentinelAIRetrievalSlow
+            expr: |
+              histogram_quantile(
+                0.99,
+                sum by (le, service) (
+                  rate(
+                    sentinel_retrieval_latency_seconds_bucket{
+                      namespace="sentinel-ai"
+                    }[5m]
+                  )
+                )
+              ) > 5
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI RAG retrieval is slow"
+              description: >
+                Service {{ $labels.service }} p99 retrieval latency
+                has exceeded 5 seconds for at least 5 minutes.
+
+          # High rate of empty retrieval results (> 20% over 10 min).
+          - alert: SentinelAIRetrievalEmpty
+            expr: |
+              sum by (service) (
+                rate(
+                  sentinel_retrieval_empty_results_total{
+                    namespace="sentinel-ai"
+                  }[10m]
+                )
+              )
+              /
+              sum by (service) (
+                rate(
+                  sentinel_retrieval_requests_total{
+                    namespace="sentinel-ai"
+                  }[10m]
+                )
+              ) > 0.20
+            for: 10m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI RAG returning mostly empty results"
+              description: >
+                Service {{ $labels.service }} has returned empty retrieval
+                results for over 20% of requests in the last 10 minutes.
+
+  data_quality.yml: |
+    groups:
+
+      - name: sentinel-ai-data-quality
+        interval: 30s
+
+        rules:
+
+          # Data quality failure rate > 5% over 5 minutes.
+          - alert: SentinelAIDataQualityFailures
+            expr: |
+              sum by (service) (
+                rate(
+                  sentinel_data_quality_failures_total{
+                    namespace="sentinel-ai"
+                  }[5m]
+                )
+              )
+              /
+              sum by (service) (
+                rate(
+                  sentinel_input_records_total{
+                    namespace="sentinel-ai"
+                  }[5m]
+                )
+              ) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI data quality failure rate is elevated"
+              description: >
+                Service {{ $labels.service }} has a data quality failure
+                rate above 5% for at least 5 minutes.
+
+          # Missing feature rate > 10%.
+          - alert: SentinelAIHighMissingFeatures
+            expr: |
+              sentinel_missing_feature_rate{
+                namespace="sentinel-ai"
+              } > 0.10
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI has high missing feature rate"
+              description: >
+                Feature {{ $labels.feature_name }} in service {{ $labels.service }}
+                has a missing rate above 10% for at least 5 minutes.
+
+  explanation.yml: |
+    groups:
+
+      - name: sentinel-ai-explanations
+        interval: 30s
+
+        rules:
+
+          # Explanation validation failure rate > 5% over 5 minutes.
+          - alert: SentinelAIExplanationValidationFailures
+            expr: |
+              sum by (service) (
+                rate(
+                  sentinel_explanation_validation_failures_total{
+                    namespace="sentinel-ai"
+                  }[5m]
+                )
+              )
+              /
+              sum by (service) (
+                rate(
+                  sentinel_explanation_requests_total{
+                    namespace="sentinel-ai"
+                  }[5m]
+                )
+              ) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI explanation validation failures elevated"
+              description: >
+                Service {{ $labels.service }} has an explanation validation
+                failure rate above 5% for at least 5 minutes.
+
+          # Explanation p99 latency > 30 seconds.
+          - alert: SentinelAIExplanationSlow
+            expr: |
+              histogram_quantile(
+                0.99,
+                sum by (le, service) (
+                  rate(
+                    sentinel_explanation_latency_seconds_bucket{
+                      namespace="sentinel-ai"
+                    }[5m]
+                  )
+                )
+              ) > 30
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI explanation generation is slow"
+              description: >
+                Service {{ $labels.service }} p99 explanation latency
+                has exceeded 30 seconds for at least 5 minutes.
+
+          # Low groundedness score < 0.5.
+          - alert: SentinelAILowGroundedness
+            expr: |
+              sentinel_explanation_groundedness{
+                namespace="sentinel-ai"
+              } < 0.5
+            for: 5m
+            labels:
+              severity: warning
+              platform: sentinel-ai
+            annotations:
+              summary: "Sentinel-AI explanation groundedness is low"
+              description: >
+                Service {{ $labels.service }} has an explanation
+                groundedness score below 0.5 for at least 5 minutes.

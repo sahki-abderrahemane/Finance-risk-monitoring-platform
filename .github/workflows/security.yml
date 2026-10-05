@@ -1,0 +1,109 @@
+name: Sentinel-AI Security
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentinel-ai-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pip-audit
+
+      - name: Audit Python dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          found=0
+
+          while IFS= read -r pyproject; do
+            [[ -z "$pyproject" ]] && continue
+
+            found=1
+            package_dir="$(dirname "$pyproject")"
+
+            echo "Auditing: $package_dir"
+
+            python -m pip install \
+              -e "$package_dir[dev]" \
+              || python -m pip install \
+              -e "$package_dir"
+
+            pip-audit
+
+          done < <(
+            find services apps -mindepth 1 -maxdepth 3 \
+              -type f \
+              -name "pyproject.toml" \
+              -print \
+              | sort
+          )
+
+          if [[ "$found" -eq 0 ]]; then
+            echo "No Python packages discovered."
+          fi
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan repository for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3

@@ -1,0 +1,69 @@
+{
+  "experiment": "cnn_baseline_vs_weighted_loss",
+  "description": "Comparison of baseline and class-weighted CNN checkpoints on the identical chronological test split.",
+  "class_names": [
+    "DOWN",
+    "FLAT",
+    "UP"
+  ],
+  "test_class_distribution": {
+    "DOWN": 496,
+    "FLAT": 315,
+    "UP": 672
+  },
+  "models": [
+    {
+      "model_name": "baseline_cnn",
+      "checkpoint": "/home/abdou/Desktop/dev/AI/sentinel/ml/models/cnn/chart_cnn_best.pt",
+      "test_samples": 1483,
+      "accuracy": 0.4531355360755226,
+      "macro_f1": 0.20788863109048725,
+      "weighted_f1": 0.2826051788795835,
+      "majority_baseline": 0.4531355360755226,
+      "accuracy_lift": 0.0,
+      "down_precision": 0.0,
+      "down_recall": 0.0,
+      "down_f1": 0.0,
+      "flat_precision": 0.0,
+      "flat_recall": 0.0,
+      "flat_f1": 0.0,
+      "up_precision": 0.4531355360755226,
+      "up_recall": 1.0,
+      "up_f1": 0.6236658932714617
+    },
+    {
+      "model_name": "weighted_cnn",
+      "checkpoint": "/home/abdou/Desktop/dev/AI/sentinel/ml/models/cnn/chart_cnn_weighted_best.pt",
+      "test_samples": 1483,
+      "accuracy": 0.36345246122724206,
+      "macro_f1": 0.2766808357610245,
+      "weighted_f1": 0.32739647264641225,
+      "majority_baseline": 0.4531355360755226,
+      "accuracy_lift": -0.08968307484828053,
+      "down_precision": 0.29573170731707316,
+      "down_recall": 0.3911290322580645,
+      "down_f1": 0.3368055555555556,
+      "flat_precision": 0.4,
+      "flat_recall": 0.01904761904761905,
+      "flat_f1": 0.03636363636363636,
+      "up_precision": 0.41748768472906406,
+      "up_recall": 0.5044642857142857,
+      "up_f1": 0.4568733153638814
+    }
+  ],
+  "deltas_weighted_minus_baseline": {
+    "accuracy": -0.08968307484828053,
+    "macro_f1": 0.06879220467053723,
+    "weighted_f1": 0.04479129376682878,
+    "down_f1": 0.3368055555555556,
+    "flat_f1": 0.03636363636363636,
+    "up_f1": -0.1667925779075803
+  },
+  "interpretation": {
+    "accuracy_improved": false,
+    "macro_f1_improved": true,
+    "weighted_f1_improved": true,
+    "weighted_above_majority_baseline": false,
+    "baseline_above_majority_baseline": false
+  }
+}

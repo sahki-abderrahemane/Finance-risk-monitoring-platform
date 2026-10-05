@@ -11,6 +11,7 @@ dependencies = [
     "numpy>=2.1",
     "pandas>=2.2",
     "pydantic>=2.10",
+    "mlflow>=3.0,<4.0",
 ]
 
 [project.optional-dependencies]
@@ -19,11 +20,15 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["services/data_engine/src", "services/risk-engine/src"]
+where = ["services/data_engine/src", "services/risk-engine/src", "services/nlp_engine/src", "services/vision-engine/src", "services/multimodal-engine/src", "services/rl-engine"]
 
 [tool.pytest.ini_options]
 testpaths = [
     "services/data_engine/tests",
     "services/risk-engine/tests",
+    "services/nlp_engine/tests",
+    "services/vision-engine/tests",
+    "services/multimodal-engine/tests",
+    "services/rl-engine/tests",
 ]
-pythonpath = [".", "services/risk-engine/src"]
+pythonpath = [".", "services/risk-engine/src", "services/nlp_engine/src", "services/vision-engine/src", "services/multimodal-engine/src", "services/rl-engine"]

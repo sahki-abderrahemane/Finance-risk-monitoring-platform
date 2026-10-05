@@ -1,0 +1,65 @@
+# syntax=docker/dockerfile:1.7
+
+FROM python:3.11-slim AS runtime
+
+ARG SERVICE_PATH
+ARG PYTHON_PACKAGE="."
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Create a non-root runtime user.
+RUN groupadd --system sentinel \
+    && useradd --system \
+       --gid sentinel \
+       --create-home \
+       --home-dir /home/sentinel \
+       sentinel
+
+# Upgrade packaging tooling without retaining pip caches.
+RUN python -m pip install --no-cache-dir --upgrade \
+    pip \
+    setuptools \
+    wheel
+
+# Copy only the selected service into the image.
+#
+# SERVICE_PATH is relative to the repository root and is supplied
+# by the platform build workflow.
+COPY ${SERVICE_PATH}/ /app/service/
+
+WORKDIR /app/service
+
+# Install the service itself when it has a pyproject.toml.
+#
+# The generic image deliberately does not assume that every Sentinel-AI
+# component is packaged identically. Services without a pyproject.toml
+# can provide their own image definition later.
+RUN if [ -f pyproject.toml ]; then \
+        python -m pip install --no-cache-dir "${PYTHON_PACKAGE}"; \
+    else \
+        echo "ERROR: ${SERVICE_PATH} does not contain pyproject.toml"; \
+        exit 1; \
+    fi
+
+# Remove build-time metadata that should never be part of the runtime image.
+RUN find /root/.cache -type f -delete 2>/dev/null || true
+
+# Runtime filesystem ownership.
+RUN chown -R sentinel:sentinel /app /home/sentinel
+
+USER sentinel
+
+# Services expose their actual application port through their deployment
+# configuration. This is a documentation default, not a runtime contract.
+EXPOSE 8000
+
+# Do not invent a service-specific application entrypoint here.
+#
+# Kubernetes deployments will provide the actual command/arguments for
+# each service. This keeps the image reusable across Sentinel-AI services.
+CMD ["python", "-m", "sentinel_ai"]

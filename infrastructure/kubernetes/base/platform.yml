@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sentinel-ai
+  labels:
+    app.kubernetes.io/part-of: sentinel-ai
+    app.kubernetes.io/managed-by: kubernetes
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sentinel-ai-runtime
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/part-of: sentinel-ai
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: sentinel-ai-compute-quota
+  namespace: sentinel-ai
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    pods: "30"
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: sentinel-ai-default-limits
+  namespace: sentinel-ai
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "1"
+        memory: 1Gi
+      defaultRequest:
+        cpu: "250m"
+        memory: 256Mi
+      min:
+        cpu: "100m"
+        memory: 128Mi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sentinel-ai-platform-config
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/part-of: sentinel-ai
+data:
+  ENVIRONMENT: "staging"
+  LOG_LEVEL: "INFO"
+  PLATFORM_NAME: "sentinel-ai"
+
+  # Sentinel-AI is a research/simulation platform.
+  # This configuration explicitly prevents deployment assumptions
+  # from being interpreted as live financial execution.
+  EXECUTION_MODE: "simulation"
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sentinel-ai-platform-pdb
+  namespace: sentinel-ai
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: sentinel-ai
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sentinel-ai-default-deny
+  namespace: sentinel-ai
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sentinel-ai-dns-egress
+  namespace: sentinel-ai
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sentinel-ai-runtime
+  namespace: sentinel-ai
+rules:
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sentinel-ai-runtime
+  namespace: sentinel-ai
+subjects:
+  - kind: ServiceAccount
+    name: sentinel-ai-runtime
+    namespace: sentinel-ai
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sentinel-ai-runtime

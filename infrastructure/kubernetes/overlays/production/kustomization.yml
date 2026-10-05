@@ -1,0 +1,130 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sentinel-ai
+
+resources:
+  - ../../base
+
+namePrefix: ""
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: sentinel-ai-platform-config
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: sentinel-ai-platform-config
+      data:
+        ENVIRONMENT: "production"
+        LOG_LEVEL: "WARNING"
+        EXECUTION_MODE: "simulation"
+        DEPLOYMENT_MODE: "research-simulation"
+
+  - target:
+      kind: Namespace
+      name: sentinel-ai
+    patch: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: sentinel-ai
+        labels:
+          app.kubernetes.io/environment: production
+
+  - target:
+      kind: Deployment
+      name: rag-engine
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: rag-engine
+      spec:
+        replicas: 2
+        template:
+          spec:
+            containers:
+              - name: rag-engine
+                resources:
+                  requests:
+                    cpu: "1"
+                    memory: "2Gi"
+                  limits:
+                    cpu: "4"
+                    memory: "8Gi"
+
+  - target:
+      kind: Deployment
+      name: rl-engine
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: rl-engine
+      spec:
+        replicas: 2
+        template:
+          spec:
+            containers:
+              - name: rl-engine
+                resources:
+                  requests:
+                    cpu: "500m"
+                    memory: "1Gi"
+                  limits:
+                    cpu: "2"
+                    memory: "4Gi"
+
+  - target:
+      kind: LimitRange
+      name: sentinel-ai-default-limits
+    patch: |-
+      apiVersion: v1
+      kind: LimitRange
+      metadata:
+        name: sentinel-ai-default-limits
+      spec:
+        limits:
+          - type: Container
+            default:
+              cpu: "2"
+              memory: 2Gi
+            defaultRequest:
+              cpu: "500m"
+              memory: 512Mi
+            min:
+              cpu: "100m"
+              memory: 128Mi
+
+  - target:
+      kind: ResourceQuota
+      name: sentinel-ai-compute-quota
+    patch: |-
+      apiVersion: v1
+      kind: ResourceQuota
+      metadata:
+        name: sentinel-ai-compute-quota
+      spec:
+        hard:
+          requests.cpu: "16"
+          requests.memory: 32Gi
+          limits.cpu: "32"
+          limits.memory: 64Gi
+          pods: "50"
+
+  - target:
+      kind: PodDisruptionBudget
+      name: sentinel-ai-platform-pdb
+    patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: sentinel-ai-platform-pdb
+      spec:
+        maxUnavailable: 1
+        selector:
+          matchLabels:
+            app.kubernetes.io/part-of: sentinel-ai

@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-engine
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/name: rag-engine
+    app.kubernetes.io/component: rag-engine
+spec:
+  replicas: 1
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rag-engine
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rag-engine
+        app.kubernetes.io/component: rag-engine
+        app.kubernetes.io/part-of: sentinel-ai
+
+    spec:
+      serviceAccountName: sentinel-ai-runtime
+
+      automountServiceAccountToken: false
+
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: rag-engine
+
+          image: ghcr.io/REPLACE_OWNER/sentinel-ai-rag-engine:REPLACE_TAG
+
+          imagePullPolicy: IfNotPresent
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+
+          ports:
+            - name: http
+              containerPort: 8003
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: sentinel-ai-platform-config
+
+            - configMapRef:
+                name: sentinel-ai-rag-engine-config
+
+            - configMapRef:
+                name: sentinel-ai-release
+                optional: true
+
+          env:
+            - name: SERVICE_NAME
+              value: "rag-engine"
+
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: sentinel-ai-rag-engine-secrets
+                  key: postgres-host
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sentinel-ai-rag-engine-secrets
+                  key: postgres-password
+
+            - name: LANGSMITH_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sentinel-ai-rag-engine-secrets
+                  key: langsmith-api-key
+                  optional: true
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag-engine
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/name: rag-engine
+    app.kubernetes.io/component: rag-engine
+spec:
+  type: ClusterIP
+
+  selector:
+    app.kubernetes.io/name: rag-engine
+
+  ports:
+    - name: http
+      port: 8003
+      targetPort: http
+      protocol: TCP

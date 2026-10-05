@@ -1,0 +1,19 @@
+{
+  "total_samples": 9882,
+  "tickers": {
+    "AAPL": 1221,
+    "AMZN": 2480,
+    "GOOGL": 1221,
+    "MSFT": 2480,
+    "NVDA": 2480
+  },
+  "labels": {
+    "DOWN": 3318,
+    "FLAT": 1976,
+    "UP": 4588
+  },
+  "window_size": 30,
+  "future_horizon": 5,
+  "up_threshold": 0.01,
+  "down_threshold": -0.01
+}

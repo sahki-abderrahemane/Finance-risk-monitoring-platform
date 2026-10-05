@@ -1,0 +1,36 @@
+{
+  "feature_order": [
+    "market_pca",
+    "finbert_mean_pooled",
+    "cnn_penultimate"
+  ],
+  "market_input_features": [
+    "return_1d",
+    "log_return_1d",
+    "sma_5",
+    "sma_20",
+    "ema_5",
+    "ema_20",
+    "volatility_20",
+    "volume_sma_20",
+    "volume_ratio",
+    "high_low_spread",
+    "open_close_spread"
+  ],
+  "market_pca_variance": 0.95,
+  "market_pca_dimensions": 5,
+  "finbert_embedding_dimensions": 768,
+  "vision_embedding_dimensions": 128,
+  "fused_dimensions": 901,
+  "train_rows": 6160,
+  "validation_rows": 1860,
+  "test_rows": 1862,
+  "target_column": "target_direction_1d",
+  "forbidden_inputs": [
+    "target_return_1d",
+    "target_direction_1d",
+    "future_return",
+    "vision_label",
+    "label"
+  ]
+}

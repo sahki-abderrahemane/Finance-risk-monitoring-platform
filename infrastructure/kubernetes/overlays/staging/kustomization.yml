@@ -1,0 +1,79 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sentinel-ai
+
+resources:
+  - ../../base
+
+namePrefix: ""
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: sentinel-ai-platform-config
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: sentinel-ai-platform-config
+      data:
+        ENVIRONMENT: "staging"
+        LOG_LEVEL: "INFO"
+        EXECUTION_MODE: "simulation"
+        DEPLOYMENT_MODE: "research-simulation"
+
+  - target:
+      kind: Namespace
+      name: sentinel-ai
+    patch: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: sentinel-ai
+        labels:
+          app.kubernetes.io/environment: staging
+
+  - target:
+      kind: Deployment
+      name: rag-engine
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: rag-engine
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: rag-engine
+                resources:
+                  requests:
+                    cpu: "500m"
+                    memory: "1Gi"
+                  limits:
+                    cpu: "2"
+                    memory: "4Gi"
+
+  - target:
+      kind: Deployment
+      name: rl-engine
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: rl-engine
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: rl-engine
+                resources:
+                  requests:
+                    cpu: "250m"
+                    memory: "512Mi"
+                  limits:
+                    cpu: "1"
+                    memory: "2Gi"

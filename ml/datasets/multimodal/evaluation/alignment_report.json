@@ -1,0 +1,12 @@
+{
+  "market_rows": 9947,
+  "sentiment_rows": 9947,
+  "vision_rows": 9882,
+  "aligned_rows": 9882,
+  "dropped_market_rows": 65,
+  "matched_sentiment": 9947,
+  "matched_vision": 9882,
+  "dropped_sentiment_rows": 0,
+  "dropped_vision_rows": 0,
+  "ticker_count": 5
+}

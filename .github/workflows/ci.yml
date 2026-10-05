@@ -1,0 +1,355 @@
+name: Sentinel-AI Platform CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentinel-ai-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  repository-validation:
+    name: Repository Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate repository structure
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_directories=(
+            "apps"
+            "services"
+            "ml"
+            "pipelines"
+            "infrastructure"
+          )
+
+          for directory in "${required_directories[@]}"; do
+            if [[ ! -d "$directory" ]]; then
+              echo "::error::Required directory '$directory' is missing."
+              exit 1
+            fi
+          done
+
+          echo "Repository structure validation passed."
+
+  python-quality:
+    name: Python Quality
+    runs-on: ubuntu-latest
+    needs: repository-validation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Upgrade packaging tools
+        run: |
+          python -m pip install --upgrade \
+            pip \
+            setuptools \
+            wheel
+
+      - name: Discover Python packages
+        id: packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "packages<<EOF"
+            find services apps -mindepth 1 -maxdepth 3 \
+              -type f \
+              -name "pyproject.toml" \
+              -print \
+              | sort
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install available Python packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          installed=0
+
+          while IFS= read -r pyproject; do
+            [[ -z "$pyproject" ]] && continue
+
+            package_dir="$(dirname "$pyproject")"
+
+            echo "Installing package: $package_dir"
+
+            python -m pip install \
+              -e "$package_dir[dev]" \
+              || python -m pip install \
+              -e "$package_dir"
+
+            installed=$((installed + 1))
+          done < <(
+            find services apps -mindepth 1 -maxdepth 3 \
+              -type f \
+              -name "pyproject.toml" \
+              -print \
+              | sort
+          )
+
+          echo "Installed $installed Python package(s)."
+
+      - name: Install repository-wide CI tooling
+        run: |
+          python -m pip install \
+            "ruff>=0.6,<1.0" \
+            "mypy>=1.10,<2.0" \
+            "pytest>=8.0,<9.0"
+
+      - name: Ruff lint
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ruff_targets=()
+
+          if [[ -d services ]]; then
+            ruff_targets+=("services")
+          fi
+
+          if [[ -d apps ]]; then
+            ruff_targets+=("apps")
+          fi
+
+          if [[ "${#ruff_targets[@]}" -eq 0 ]]; then
+            echo "No Python application/service directories found."
+            exit 0
+          fi
+
+          ruff check "${ruff_targets[@]}"
+
+      - name: Ruff format validation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ruff_targets=()
+
+          if [[ -d services ]]; then
+            ruff_targets+=("services")
+          fi
+
+          if [[ -d apps ]]; then
+            ruff_targets+=("apps")
+          fi
+
+          if [[ "${#ruff_targets[@]}" -eq 0 ]]; then
+            exit 0
+          fi
+
+          ruff format --check "${ruff_targets[@]}"
+
+      - name: Python compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python_directories=()
+
+          if [[ -d services ]]; then
+            python_directories+=("services")
+          fi
+
+          if [[ -d apps ]]; then
+            python_directories+=("apps")
+          fi
+
+          if [[ -d ml ]]; then
+            python_directories+=("ml")
+          fi
+
+          if [[ -d pipelines ]]; then
+            python_directories+=("pipelines")
+          fi
+
+          if [[ "${#python_directories[@]}" -eq 0 ]]; then
+            echo "No Python source directories found."
+            exit 0
+          fi
+
+          python -m compileall -q "${python_directories[@]}"
+
+  service-tests:
+    name: Service Tests
+    runs-on: ubuntu-latest
+    needs: repository-validation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Upgrade packaging tools
+        run: |
+          python -m pip install --upgrade \
+            pip \
+            setuptools \
+            wheel
+
+      - name: Install service dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r pyproject; do
+            [[ -z "$pyproject" ]] && continue
+
+            package_dir="$(dirname "$pyproject")"
+
+            echo "Installing: $package_dir"
+
+            python -m pip install \
+              -e "$package_dir[dev]" \
+              || python -m pip install \
+              -e "$package_dir"
+          done < <(
+            find services apps -mindepth 1 -maxdepth 3 \
+              -type f \
+              -name "pyproject.toml" \
+              -print \
+              | sort
+          )
+
+      - name: Install pytest
+        run: |
+          python -m pip install "pytest>=8.0,<9.0"
+
+      - name: Discover test suites
+        id: tests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test_files="$(find services apps -type f -name 'test_*.py' -print | sort || true)"
+
+          if [[ -z "$test_files" ]]; then
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
+            echo "No test files found."
+          else
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+            echo "Discovered tests:"
+            echo "$test_files"
+          fi
+
+      - name: Run service tests
+        if: steps.tests.outputs.has_tests == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python -m pytest \
+            services \
+            apps \
+            -q \
+            --disable-warnings \
+            --maxfail=1
+
+      - name: No tests yet
+        if: steps.tests.outputs.has_tests != 'true'
+        run: |
+          echo "No service tests currently exist."
+          echo "CI will execute them automatically once they are added."
+
+  phase5-tests:
+    name: Phase 5 Tests
+    runs-on: ubuntu-latest
+    needs: repository-validation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install explainability dependencies
+        working-directory: services/explainability
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Detect consolidated Phase 5 test suite
+        id: phase5
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if find services/explainability/tests \
+            -maxdepth 1 \
+            -type f \
+            -name "test_phase5.py" \
+            -print \
+            -quit 2>/dev/null | grep -q .; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run consolidated Phase 5 tests
+        if: steps.phase5.outputs.exists == 'true'
+        working-directory: services/explainability
+        run: |
+          python -m pytest \
+            tests/test_phase5.py \
+            -q \
+            --disable-warnings \
+            --maxfail=1
+
+      - name: Phase 5 test suite pending
+        if: steps.phase5.outputs.exists != 'true'
+        run: |
+          echo "The consolidated Phase 5 test suite has not been created yet."
+          echo "This is intentional during Phase 5 module implementation."
+
+  ci-summary:
+    name: Platform CI Summary
+    runs-on: ubuntu-latest
+    needs:
+      - repository-validation
+      - python-quality
+      - service-tests
+      - phase5-tests
+
+    steps:
+      - name: CI passed
+        run: |
+          echo "Sentinel-AI platform CI checks completed successfully."

@@ -1,0 +1,67 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sentinel-ai-rag-engine-egress
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/name: rag-engine
+    app.kubernetes.io/part-of: sentinel-ai
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: rag-engine
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8003
+  egress:
+    # Allow DNS resolution.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # Allow outbound PostgreSQL connections.
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 5432
+
+    # Allow HTTPS egress for HuggingFace model downloads
+    # and optional LangSmith telemetry.
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sentinel-ai-rl-engine-ingress
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/name: rl-engine
+    app.kubernetes.io/part-of: sentinel-ai
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: rl-engine
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8000

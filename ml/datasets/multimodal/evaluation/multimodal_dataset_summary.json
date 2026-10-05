@@ -1,0 +1,38 @@
+{
+  "dataset": "sentinel-ai-phase2-multimodal",
+  "rows": 9882,
+  "columns": 36,
+  "tickers": [
+    "AAPL",
+    "AMZN",
+    "GOOGL",
+    "MSFT",
+    "NVDA"
+  ],
+  "rows_by_ticker": {
+    "AAPL": 1221,
+    "AMZN": 2480,
+    "GOOGL": 1221,
+    "MSFT": 2480,
+    "NVDA": 2480
+  },
+  "timestamp_min": "2016-10-10T00:00:00",
+  "timestamp_max": "2026-08-24T00:00:00",
+  "market_feature_files": [
+    "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/features/AAPL_features.csv",
+    "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/features/AMZN_features.csv",
+    "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/features/GOOGL_features.csv",
+    "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/features/MSFT_features.csv",
+    "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/features/NVDA_features.csv"
+  ],
+  "sentiment_file": "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/news/evaluation/sentiment_daily.csv",
+  "vision_metadata_file": "/home/abdou/Desktop/dev/AI/sentinel/ml/datasets/charts/chart_metadata.csv",
+  "target_columns": [
+    "target_return_1d",
+    "target_direction_1d"
+  ],
+  "vision_future_return_used_as_feature": false,
+  "vision_label_used_as_feature": false,
+  "data_is_historical_or_synthetic": true,
+  "real_time_trading_enabled": false
+}

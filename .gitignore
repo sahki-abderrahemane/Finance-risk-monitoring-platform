@@ -1,0 +1,117 @@
+# ==========================================
+# Environment
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build
+build/
+dist/
+*.egg-info/
+sentinel_ai.egg-info/
+
+# ==========================================
+# IDE / OS
+# ==========================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ==========================================
+# Testing / linting
+# ==========================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ==========================================
+# Logs / temp
+# ==========================================
+*.log
+tmp/
+temp/
+
+# ==========================================
+# Databases / experiment tracking
+# ==========================================
+*.sqlite
+*.db
+mlruns/
+mlflow.db
+
+# ==========================================
+# Model binaries (large — use releases or external storage)
+# ==========================================
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.h5
+
+# Model artifact & checkpoint directories
+ml/models/
+**/models/base/
+**/models/adapters/
+**/models/checkpoints/
+**/models/exported/
+**/checkpoints/
+checkpoints/
+cache/
+models/
+
+# HuggingFace / transformer caches
+.huggingface/
+.hf/
+hf_cache/
+sentence_transformers/
+
+# ==========================================
+# Derived data artifacts (reproducible from raw)
+# ==========================================
+*.npy
+*.npz
+*.faiss
+*.faiss.idx
+storage/
+
+# MLflow run artifacts committed under services
+**/mlruns/
+
+# ==========================================
+# Archives
+# ==========================================
+*.zip
+*.tar.gz
+*.tar
+
+# ==========================================
+# Docker
+# ==========================================
+docker-compose.override.yml

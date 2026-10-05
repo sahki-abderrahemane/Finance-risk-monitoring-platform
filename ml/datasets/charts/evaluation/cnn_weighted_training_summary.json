@@ -1,0 +1,114 @@
+{
+  "training_result": {
+    "best_epoch": 6,
+    "best_validation_loss": 1.090332916712793,
+    "best_validation_accuracy": 0.4048582995951417,
+    "best_validation_macro_f1": 0.3004962883269143,
+    "epochs_completed": 11,
+    "stopped_early": true,
+    "checkpoint_path": "ml/models/cnn/chart_cnn_weighted_best.pt"
+  },
+  "model": {
+    "model_class": "ChartCNN",
+    "input_channels": 3,
+    "num_classes": 3,
+    "base_channels": 32,
+    "dropout": 0.3,
+    "image_size": 224,
+    "trainable_parameters": 93859
+  },
+  "model_config": {
+    "input_channels": 3,
+    "num_classes": 3,
+    "base_channels": 32,
+    "dropout": 0.3,
+    "image_size": 224
+  },
+  "training_config": {
+    "epochs": 20,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "patience": 5,
+    "min_delta": 0.0001,
+    "random_seed": 42,
+    "gradient_clip_norm": 1.0,
+    "device": "auto",
+    "scheduler_factor": 0.5,
+    "scheduler_patience": 2,
+    "scheduler_min_lr": 1e-06
+  },
+  "dataset_config": {
+    "image_size": 224,
+    "train_ratio": 0.7,
+    "validation_ratio": 0.15,
+    "test_ratio": 0.15,
+    "batch_size": 32,
+    "num_workers": 0,
+    "random_seed": 42
+  },
+  "class_names": [
+    "DOWN",
+    "FLAT",
+    "UP"
+  ],
+  "class_weights": [
+    1.011257290840149,
+    1.6480820178985596,
+    0.7120650410652161
+  ],
+  "weighted_loss": true,
+  "device": "cuda",
+  "dataset": {
+    "train": {
+      "rows": 6917,
+      "start": "2016-10-10T00:00:00",
+      "end": "2024-04-11T00:00:00",
+      "tickers": [
+        "AAPL",
+        "AMZN",
+        "GOOGL",
+        "MSFT",
+        "NVDA"
+      ],
+      "labels": {
+        "DOWN": 2280,
+        "FLAT": 1399,
+        "UP": 3238
+      }
+    },
+    "validation": {
+      "rows": 1482,
+      "start": "2024-04-11T00:00:00",
+      "end": "2025-06-17T00:00:00",
+      "tickers": [
+        "AAPL",
+        "AMZN",
+        "GOOGL",
+        "MSFT",
+        "NVDA"
+      ],
+      "labels": {
+        "DOWN": 542,
+        "FLAT": 262,
+        "UP": 678
+      }
+    },
+    "test": {
+      "rows": 1483,
+      "start": "2025-06-17T00:00:00",
+      "end": "2026-08-24T00:00:00",
+      "tickers": [
+        "AAPL",
+        "AMZN",
+        "GOOGL",
+        "MSFT",
+        "NVDA"
+      ],
+      "labels": {
+        "DOWN": 496,
+        "FLAT": 315,
+        "UP": 672
+      }
+    }
+  }
+}

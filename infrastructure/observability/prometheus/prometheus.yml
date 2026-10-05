@@ -1,0 +1,89 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+rule_files:
+  - /etc/prometheus/alert-rules.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  - job_name: alertmanager
+    static_configs:
+      - targets:
+          - alertmanager:9093
+
+  - job_name: rag-engine
+    static_configs:
+      - targets:
+          - host.docker.internal:8003
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  - job_name: rl-engine
+    static_configs:
+      - targets:
+          - host.docker.internal:8000
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  - job_name: risk-engine-api
+    static_configs:
+      - targets:
+          - host.docker.internal:8001
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  - job_name: nlp-engine-api
+    static_configs:
+      - targets:
+          - host.docker.internal:8002
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  - job_name: vision-engine-api
+    static_configs:
+      - targets:
+          - host.docker.internal:8004
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  - job_name: multimodal-engine-api
+    static_configs:
+      - targets:
+          - host.docker.internal:8005
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  - job_name: grafana
+    static_configs:
+      - targets:
+          - grafana:3000
+    metrics_path: /metrics
+
+  - job_name: loki
+    static_configs:
+      - targets:
+          - loki:3100
+    metrics_path: /metrics
+
+  - job_name: tempo
+    static_configs:
+      - targets:
+          - tempo:3200
+    metrics_path: /metrics
+
+  - job_name: otel-collector
+    static_configs:
+      - targets:
+          - otel-collector:8888
+    metrics_path: /metrics

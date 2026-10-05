@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sentinel-ai-grafana-datasources
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/part-of: sentinel-ai
+data:
+  datasources.yml: |
+    apiVersion: 1
+
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://sentinel-ai-prometheus:9090
+        isDefault: true
+        editable: false
+
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://sentinel-ai-loki:3100
+        editable: false
+
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://sentinel-ai-tempo:3200
+        uid: tempo
+        editable: false
+        jsonData:
+          tracesToLogs:
+            datasourceUid: Loki
+          tracesToMetrics:
+            datasourceUid: Prometheus
+          serviceMap:
+            datasourceUid: Prometheus
+
+      - name: Alertmanager
+        type: alertmanager
+        access: proxy
+        url: http://sentinel-ai-alertmanager:9093
+        editable: false
+        jsonData:
+          implementation: prometheus
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sentinel-ai-grafana-dashboard-providers
+  namespace: sentinel-ai
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/part-of: sentinel-ai
+data:
+  dashboards.yml: |
+    apiVersion: 1
+
+    providers:
+      - name: Sentinel-AI
+        orgId: 1
+        folder: "Sentinel-AI"
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 30
+        options:
+          path: /etc/grafana/provisioning/dashboards/json
+          foldersFromFilesStructure: false

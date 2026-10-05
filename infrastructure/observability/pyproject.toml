@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel-observability"
+version = "0.1.0"
+description = "Sentinel-AI shared observability library"
+requires-python = ">=3.11,<3.14"
+
+dependencies = [
+    "prometheus-client>=0.20,<1.0",
+    "structlog>=24.1,<25.0",
+    "asgi-correlation-id>=4.0,<5.0",
+    "opentelemetry-api>=1.27,<2.0",
+    "opentelemetry-sdk>=1.27,<2.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.27,<2.0",
+    "opentelemetry-instrumentation-fastapi>=0.48b0,<1.0",
+    "opentelemetry-instrumentation-httpx>=0.48b0,<1.0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.48b0,<1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0,<10.0",
+    "httpx>=0.27,<1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sentinel_observability*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

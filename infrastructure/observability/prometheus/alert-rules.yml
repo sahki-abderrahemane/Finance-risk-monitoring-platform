@@ -1,0 +1,158 @@
+groups:
+  - name: sentinel-platform
+    interval: 30s
+    rules:
+      - alert: SentinelServiceDown
+        expr: up{job=~"rag-engine|rl-engine|risk-engine-api|nlp-engine-api|vision-engine-api|multimodal-engine-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Sentinel-AI service is down"
+          description: "{{ $labels.job }} has been unreachable for over 1 minute."
+
+      - alert: SentinelHighErrorRate
+        expr: |
+          sum by (job, method, endpoint) (
+            rate(sentinel_http_requests_total{status_code=~"5.."}[5m])
+          ) / sum by (job, method, endpoint) (
+            rate(sentinel_http_requests_total[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "{{ $labels.job }} endpoint {{ $labels.endpoint }} error rate > 5%."
+
+      - alert: SentinelHighLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, job, endpoint) (
+              rate(sentinel_http_request_duration_seconds_bucket[5m])
+            )
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p99 latency"
+          description: "{{ $labels.job }} endpoint {{ $labels.endpoint }} p99 > 5s."
+
+  - name: sentinel-ml-services
+    interval: 30s
+    rules:
+      - alert: SentinelNLPServiceDown
+        expr: up{job="nlp-engine-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NLP engine API is down"
+          description: "NLP sentiment service has been unreachable for over 1 minute."
+
+      - alert: SentinelVisionServiceDown
+        expr: up{job="vision-engine-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Vision engine API is down"
+          description: "Vision chart classification service has been unreachable for over 1 minute."
+
+      - alert: SentinelMultimodalServiceDown
+        expr: up{job="multimodal-engine-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Multimodal engine API is down"
+          description: "Multimodal risk engine service has been unreachable for over 1 minute."
+
+      - alert: SentinelRiskServiceDown
+        expr: up{job="risk-engine-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Risk engine API is down"
+          description: "Risk scoring service has been unreachable for over 1 minute."
+
+  - name: sentinel-ml
+    interval: 30s
+    rules:
+      - alert: SentinelInferenceErrors
+        expr: |
+          sum by (service, model_name) (
+            rate(sentinel_inference_requests_total{status="error"}[5m])
+          ) / sum by (service, model_name) (
+            rate(sentinel_inference_requests_total[5m])
+          ) > 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ML inference error rate elevated"
+          description: "Model {{ $labels.model_name }} error rate > 10%."
+
+      - alert: SentinelInferenceSlow
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, service, model_name) (
+              rate(sentinel_inference_latency_seconds_bucket[5m])
+            )
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ML inference is slow"
+          description: "Model {{ $labels.model_name }} p99 inference > 10s."
+
+  - name: sentinel-rag
+    interval: 30s
+    rules:
+      - alert: SentinelRetrievalErrors
+        expr: |
+          sum by (service) (
+            rate(sentinel_retrieval_requests_total{status="error"}[5m])
+          ) / sum by (service) (
+            rate(sentinel_retrieval_requests_total[5m])
+          ) > 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RAG retrieval error rate elevated"
+          description: "RAG retrieval error rate > 10%."
+
+      - alert: SentinelRetrievalEmpty
+        expr: |
+          sum by (service) (
+            rate(sentinel_retrieval_empty_results_total[10m])
+          ) / sum by (service) (
+            rate(sentinel_retrieval_requests_total[10m])
+          ) > 0.20
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG mostly returning empty results"
+          description: "Over 20% of retrieval requests returned 0 results."
+
+  - name: sentinel-data-quality
+    interval: 30s
+    rules:
+      - alert: SentinelDataQualityFailures
+        expr: |
+          sum by (service) (
+            rate(sentinel_data_quality_failures_total[5m])
+          ) / sum by (service) (
+            rate(sentinel_input_records_total[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Data quality failure rate elevated"
+          description: "Data quality failure rate > 5%."

@@ -1,0 +1,180 @@
+services:
+
+  # ── Sentinel-AI API Services ─────────────────────────────────
+
+  rl-engine:
+    build:
+      context: ../../services/rl-engine
+      dockerfile: ../../infrastructure/docker/rl-engine/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - SENTINEL_SERVICE_NAME=rl-engine
+      - SENTINEL_ENVIRONMENT=development
+    restart: unless-stopped
+
+  risk-engine-api:
+    build:
+      context: ../../services
+      dockerfile: risk-engine-api/Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - ../../ml/models:/app/ml/models:ro
+    environment:
+      - SENTINEL_SERVICE_NAME=risk-engine-api
+      - SENTINEL_ENVIRONMENT=development
+    restart: unless-stopped
+
+  nlp-engine-api:
+    build:
+      context: ../../services
+      dockerfile: nlp-engine-api/Dockerfile
+    ports:
+      - "8002:8002"
+    volumes:
+      - ../../ml/models:/app/ml/models:ro
+    environment:
+      - SENTINEL_SERVICE_NAME=nlp-engine-api
+      - SENTINEL_ENVIRONMENT=development
+    restart: unless-stopped
+
+  rag-engine:
+    build:
+      context: ../../services/rag-engine
+      dockerfile: ../../infrastructure/docker/rag-engine/Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - SENTINEL_SERVICE_NAME=rag-engine
+      - SENTINEL_ENVIRONMENT=development
+    restart: unless-stopped
+
+  vision-engine-api:
+    build:
+      context: ../../services
+      dockerfile: vision-engine-api/Dockerfile
+    ports:
+      - "8004:8004"
+    volumes:
+      - ../../ml/models:/app/ml/models:ro
+    environment:
+      - SENTINEL_SERVICE_NAME=vision-engine-api
+      - SENTINEL_ENVIRONMENT=development
+    restart: unless-stopped
+
+  multimodal-engine-api:
+    build:
+      context: ../../services
+      dockerfile: multimodal-engine-api/Dockerfile
+    ports:
+      - "8005:8005"
+    volumes:
+      - ../../ml/models:/app/ml/models:ro
+      - ../../ml/datasets/multimodal/features:/app/ml/datasets/multimodal/features:ro
+    environment:
+      - SENTINEL_SERVICE_NAME=multimodal-engine-api
+      - SENTINEL_ENVIRONMENT=development
+    restart: unless-stopped
+
+  # ── Observability Stack ──────────────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.29.0
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    restart: unless-stopped
+
+  alertmanager-webhook:
+    build:
+      context: ./alertmanager-webhook
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.4.2
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    volumes:
+      - ./promtail/promtail.yml:/etc/promtail/config.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.7.1
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo_data:/var/tempo
+    command: -config.file=/etc/tempo/tempo.yml
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.118.0
+    ports:
+      - "4319:4317"
+      - "4320:4318"
+    volumes:
+      - ./otel-collector/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
+    command: --config=/etc/otelcol-contrib/config.yaml
+    depends_on:
+      - tempo
+      - loki
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
+  loki_data:
+  tempo_data:

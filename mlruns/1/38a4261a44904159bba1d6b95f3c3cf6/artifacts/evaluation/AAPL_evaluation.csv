@@ -1,2 +1,0 @@
-ticker,rows,gbm_accuracy,gbm_roc_auc,gbm_log_loss,gbm_brier_score,baseline_accuracy,baseline_positive_class_ratio,accuracy_lift,risk_score_mean,risk_score_median,high_risk_positive_ratio,low_risk_positive_ratio
-AAPL,186,0.543010752688172,0.5552083333333333,0.8323050898397242,0.2998509778766741,0.5161290322580645,0.5161290322580645,0.026881720430107503,53.24987306854245,54.32656044108444,0.5446428571428571,

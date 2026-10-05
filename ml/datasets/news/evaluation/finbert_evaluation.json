@@ -1,0 +1,63 @@
+{
+  "rows": 225,
+  "ground_truth_column": "sentiment_label",
+  "prediction_column": "predicted_sentiment",
+  "labels": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "accuracy": 1.0,
+  "macro_f1": 1.0,
+  "weighted_f1": 1.0,
+  "classification_report": {
+    "negative": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 67.0
+    },
+    "neutral": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 79.0
+    },
+    "positive": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 79.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 225.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 225.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      67,
+      0,
+      0
+    ],
+    [
+      0,
+      79,
+      0
+    ],
+    [
+      0,
+      0,
+      79
+    ]
+  ]
+}
